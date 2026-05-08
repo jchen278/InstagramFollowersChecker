@@ -1,9 +1,20 @@
 from parser import get_all_followers, get_following
+import tkinter as tk
+from tkinter import filedialog
+import ctypes
 
 def main():
-    # Define the folder where your JSONs live
-    data_dir = "test_data"
     
+    
+    root = tk.Tk()
+    root.withdraw()
+    # Select folder
+    data_dir = filedialog.askdirectory(title="Select your Instagram Data Folder")
+    
+    if not data_dir:
+        print("No folder selected. Exiting...")
+        return
+
     # Use the functions from parser.py
     followers = get_all_followers(data_dir)
     following = get_following(data_dir)
