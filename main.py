@@ -4,7 +4,12 @@ from tkinter import filedialog
 import ctypes
 
 def main():
-    
+    # Tells Windows to let the app handle scaling
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    except Exception:
+        # This is a fallback for older versions
+        ctypes.windll.user32.SetProcessDPIAware()
     
     root = tk.Tk()
     root.withdraw()
