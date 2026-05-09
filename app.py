@@ -24,12 +24,25 @@ class IGApp(ctk.CTk):
         self.summary_label.pack(pady=10)
 
         # Search Bar
+        # Create a horizontal frame for Search + Clear
+        self.search_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
+        self.search_frame.pack(pady=10)
+
         self.search_var = ctk.StringVar()
         self.search_var.trace_add("write", self.filter_results)
 
-        self.search_entry = ctk.CTkEntry(self.scroll_frame, placeholder_text="Search names...", 
-                                        textvariable=self.search_var, width=400)
-        self.search_entry.pack(pady=10)
+        self.search_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Search names...", 
+                                        textvariable=self.search_var, width=350)
+        self.search_entry.pack(side="left", padx=(0, 10))
+
+        # The Clear Button
+        self.clear_btn = ctk.CTkButton(self.search_frame, text="X", width=30, 
+                                    fg_color="gray30", hover_color="red",
+                                    command=self.clear_search)
+        self.clear_btn.pack(side="left")
+
+        # Re-bind the Ctrl+F shortcut
+        self.bind("<Control-f>", lambda event: self.search_entry.focus())
 
         # --- SECTIONS ---
 
@@ -83,7 +96,7 @@ class IGApp(ctk.CTk):
     def run_audit(self, folder):
         data = analyze_relationships(folder)
     
-        # Store the full data so we can filter it later
+        # Store the full data to filter later
         self.full_data = data 
         
         self.summary_label.configure(
@@ -97,7 +110,7 @@ class IGApp(ctk.CTk):
         """Filters the textboxes based on the search entry."""
         search_term = self.search_var.get().lower()
         
-        # If we haven't run an audit yet, just stop
+        # If audit hasn't ran yet, stop
         if not hasattr(self, 'full_data'):
             return
 
@@ -112,3 +125,8 @@ class IGApp(ctk.CTk):
             # List comprehension to find matches
             filtered_list = [user for user in self.full_data[key] if search_term in user.lower()]
             self.update_box(box, filtered_list)
+    
+    def clear_search(self):
+        """Resets the search bar and refills the boxes with all data."""
+        self.search_var.set("") # This triggers filter_results automatically!
+        self.search_entry.focus() # Keeps the cursor in the box for a new search
