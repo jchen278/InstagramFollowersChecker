@@ -23,6 +23,14 @@ class IGApp(ctk.CTk):
         self.summary_label = ctk.CTkLabel(self.scroll_frame, text="Select a folder to begin", font=("Arial", 14))
         self.summary_label.pack(pady=10)
 
+        # Search Bar
+        self.search_var = ctk.StringVar()
+        self.search_var.trace_add("write", self.filter_results)
+
+        self.search_entry = ctk.CTkEntry(self.scroll_frame, placeholder_text="Search names...", 
+                                        textvariable=self.search_var, width=400)
+        self.search_entry.pack(pady=10)
+
         # --- SECTIONS ---
 
         # Not Following Back
@@ -73,15 +81,34 @@ class IGApp(ctk.CTk):
                 box.insert("end", f" {user}\n")
 
     def run_audit(self, folder):
-        # Call logic
         data = analyze_relationships(folder)
+    
+        # Store the full data so we can filter it later
+        self.full_data = data 
         
-        # Update Summary
         self.summary_label.configure(
             text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
         )
         
-        # Update each specific box
-        self.update_box(self.nf_box, data["not_following_back"])
-        self.update_box(self.fans_box, data["fans"])
-        self.update_box(self.mut_box, data["mutuals"])
+        # Initial display
+        self.filter_results()
+    
+    def filter_results(self, *args):
+        """Filters the textboxes based on the search entry."""
+        search_term = self.search_var.get().lower()
+        
+        # If we haven't run an audit yet, just stop
+        if not hasattr(self, 'full_data'):
+            return
+
+        # Filter each category
+        categories = {
+            "not_following_back": self.nf_box,
+            "fans": self.fans_box,
+            "mutuals": self.mut_box
+        }
+
+        for key, box in categories.items():
+            # List comprehension to find matches
+            filtered_list = [user for user in self.full_data[key] if search_term in user.lower()]
+            self.update_box(box, filtered_list)
