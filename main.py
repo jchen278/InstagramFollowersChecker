@@ -1,38 +1,10 @@
-from parser import get_all_followers, get_following
-import tkinter as tk
-from tkinter import filedialog
-import ctypes
-
-def main():
-    # Tells Windows to let the app handle scaling
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(1)
-    except Exception:
-        # This is a fallback for older versions
-        ctypes.windll.user32.SetProcessDPIAware()
-    
-    root = tk.Tk()
-    root.withdraw()
-    # Select folder
-    data_dir = filedialog.askdirectory(title="Select your Instagram Data Folder")
-    
-    if not data_dir:
-        print("No folder selected. Exiting...")
-        return
-
-    # Use the functions from parser.py
-    followers = get_all_followers(data_dir)
-    following = get_following(data_dir)
-    
-    # Logic: Set Difference
-    not_following_back = following - followers
-    print(f"You follow {len(following)}")
-    print(f"{len(followers)} people follow you")
-    print(f"Found {len(not_following_back)} people who don't follow you back.")
-
-    for user in sorted(not_following_back):
-        print(user)
-    
+from app import IGApp
+import customtkinter as ctk
 
 if __name__ == "__main__":
-    main()
+    # Optional: Set the theme
+    ctk.set_appearance_mode("dark") 
+    ctk.set_default_color_theme("blue")
+    
+    app = IGApp()
+    app.mainloop()
