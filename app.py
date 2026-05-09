@@ -20,6 +20,11 @@ class IGApp(ctk.CTk):
         self.label = ctk.CTkLabel(self.scroll_frame, text="Instagram Follower Stats", font=("Arial", 24, "bold"))
         self.label.pack(pady=10)
 
+        # Touch screen functionality
+        self.canvas = self.scroll_frame._parent_canvas
+        self.canvas.bind("<Button-1>", self._on_touch_start)
+        self.canvas.bind("<B1-Motion>", self._on_touch_drag)
+
         # Main Action Button
         self.select_btn = ctk.CTkButton(self.scroll_frame, text="Select Data Folder", command=self.select_folder)
         self.select_btn.pack(pady=10)
@@ -83,13 +88,12 @@ class IGApp(ctk.CTk):
         """Only allows the main scroll frame to move if we aren't inside a textbox."""
         if self.allow_main_scroll:
             # Increase the multiplier (e.g., 3 or 5) to scroll faster
-            # Higher number = faster scroll
             scroll_speed = 3 
             
-            # Use units for precise line-by-line scrolling, but more of them
+            # Use units for precise scrolling
             move_amount = int(-1 * (event.delta / 120) * scroll_speed)
             self.scroll_frame._parent_canvas.yview_scroll(move_amount, "units")
-            
+
     # --- UI METHODS ---
 
     def toggle_section(self, section, button):
@@ -139,6 +143,16 @@ class IGApp(ctk.CTk):
     def clear_search(self):
         self.search_var.set("")
         self.search_entry.focus()
+
+    def _on_touch_start(self, event):
+        """Records the initial touch position."""
+        self.canvas.scan_mark(event.x, event.y)
+
+    def _on_touch_drag(self, event):
+        """Moves the canvas based on drag distance."""
+        # This 'scan_dragto' is a built-in Tkinter method 
+        # designed specifically for smooth 'flick' scrolling.
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
 
 if __name__ == "__main__":
     app = IGApp()
