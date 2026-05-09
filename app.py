@@ -8,7 +8,7 @@ class IGApp(ctk.CTk):
         self.title("IG Relationship Auditor")
         self.geometry("600x800")
 
-        # 1. Main Scrollable Container
+        # Main Scrollable Container
         self.scroll_frame = ctk.CTkScrollableFrame(self, width=550, height=750)
         self.scroll_frame.pack(pady=20, padx=20, fill="both", expand=True)
 
@@ -19,32 +19,35 @@ class IGApp(ctk.CTk):
         self.select_btn = ctk.CTkButton(self.scroll_frame, text="Select Data Folder", command=self.select_folder)
         self.select_btn.pack(pady=10)
 
-        # Summary Label for counts
+        # Summary Label
         self.summary_label = ctk.CTkLabel(self.scroll_frame, text="Select a folder to begin", font=("Arial", 14))
         self.summary_label.pack(pady=10)
 
         # --- SECTIONS ---
 
-        # 2. Section: Not Following Back
+        # Not Following Back
         self.nf_btn = ctk.CTkButton(self.scroll_frame, text="▼ Not Following Back", 
                                     command=lambda: self.toggle_section(self.nf_box, self.nf_btn))
         self.nf_btn.pack(fill="x", pady=(10, 0))
         self.nf_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        self.nf_box.pack(fill="x", padx=10)
+        # Commented to start in hidden position
+        # self.nf_box.pack(fill="x", padx=10)
 
-        # 3. Section: Fans
+        # Fans
         self.fans_btn = ctk.CTkButton(self.scroll_frame, text="▼ Fans", 
                                       command=lambda: self.toggle_section(self.fans_box, self.fans_btn))
         self.fans_btn.pack(fill="x", pady=(10, 0))
         self.fans_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        self.fans_box.pack(fill="x", padx=10)
+        # Commented to start in hidden position
+        # self.fans_box.pack(fill="x", padx=10)
 
-        # 4. Section: Mutuals
-        self.mut_btn = ctk.CTkButton(self.scroll_frame, text="▼ Mutuals", 
+        # Mutualually Following
+        self.mut_btn = ctk.CTkButton(self.scroll_frame, text="▼ Mutualually Following", 
                                      command=lambda: self.toggle_section(self.mut_box, self.mut_btn))
         self.mut_btn.pack(fill="x", pady=(10, 0))
         self.mut_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        self.mut_box.pack(fill="x", padx=10)
+        # Commented to start in hidden position
+        # self.mut_box.pack(fill="x", padx=10)
 
     def toggle_section(self, section, button):
         """Hides or shows a section and updates the arrow."""
@@ -81,4 +84,4 @@ class IGApp(ctk.CTk):
         # Update each specific box
         self.update_box(self.nf_box, data["not_following_back"])
         self.update_box(self.fans_box, data["fans"])
-        self.update_box(self.mut_box, data["mutuals"])
+        self.update_box(self.mut_box, data["mutualually_following"])
