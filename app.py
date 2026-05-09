@@ -20,6 +20,8 @@ class IGApp(ctk.CTk):
         self.label = ctk.CTkLabel(self.scroll_frame, text="Instagram Follower Stats", font=("Arial", 24, "bold"))
         self.label.pack(pady=10)
 
+        self.scroll_accumulator = 0.0
+
         # Touch screen functionality
         self.canvas = self.scroll_frame._parent_canvas
         self.canvas.bind("<Button-1>", self._on_touch_start)
@@ -56,44 +58,74 @@ class IGApp(ctk.CTk):
         # Not Following Back
         self.nf_btn = ctk.CTkButton(self.scroll_frame, text="▶ Not Following Back", 
                                     command=lambda: self.toggle_section(self.nf_box, self.nf_btn))
-        self.nf_btn.pack(fill="x", pady=(10, 0))
+        self.nf_btn.pack(fill="x", pady=(10, 0), padx=(20, 20))
         self.nf_box = ctk.CTkTextbox(self.scroll_frame, height=200)
         self._bind_scroll_lock(self.nf_box)
 
         # Fans
         self.fans_btn = ctk.CTkButton(self.scroll_frame, text="▶ Fans", 
                                       command=lambda: self.toggle_section(self.fans_box, self.fans_btn))
-        self.fans_btn.pack(fill="x", pady=(10, 0))
+        self.fans_btn.pack(fill="x", pady=(10, 0), padx=(20, 20))
         self.fans_box = ctk.CTkTextbox(self.scroll_frame, height=200)
         self._bind_scroll_lock(self.fans_box)
 
         # Mutually Following
         self.mut_btn = ctk.CTkButton(self.scroll_frame, text="▶ Mutually Following", 
                                      command=lambda: self.toggle_section(self.mut_box, self.mut_btn))
-        self.mut_btn.pack(fill="x", pady=(10, 0))
+        self.mut_btn.pack(fill="x", pady=(10, 0), padx=(20, 20))
         self.mut_box = ctk.CTkTextbox(self.scroll_frame, height=200)
         self._bind_scroll_lock(self.mut_box)
 
     # --- SCROLL LOGIC ---
 
     def _bind_scroll_lock(self, widget):
-        """Sets a flag to ignore main scroll when hovering over textboxes."""
-        widget.bind("<Enter>", lambda e: self._set_main_scroll(False))
-        widget.bind("<Leave>", lambda e: self._set_main_scroll(True))
+        widget.bind("<Enter>", lambda e: self._set_scroll_target(widget))
+        widget.bind("<Leave>", lambda e: self._set_scroll_target(None))
 
-    def _set_main_scroll(self, status):
-        self.allow_main_scroll = status
+    def _set_scroll_target(self, widget):
+        self.active_textbox = widget
+        # If widget is None, we are in the main area (True)
+        # If widget is a textbox, we are NOT in the main area (False)
+        self.allow_main_scroll = (widget is None)
 
     def _check_scroll_condition(self, event):
-        """Only allows the main scroll frame to move if we aren't inside a textbox."""
-        if self.allow_main_scroll:
-            # Increase the multiplier (e.g., 3 or 5) to scroll faster
-            scroll_speed = 3 
+        # 1. Calculate the precise movement and add to bank
+        raw_delta = -1 * (event.delta / 120)
+        self.scroll_accumulator += raw_delta
+        
+        # 2. Only move if we have accumulated at least one full unit
+        if abs(self.scroll_accumulator) >= 1:
+            move_units = int(self.scroll_accumulator)
+            self.scroll_accumulator -= move_units  # Keep the remainder
             
-            # Use units for precise scrolling
-            move_amount = int(-1 * (event.delta / 120) * scroll_speed)
-            self.scroll_frame._parent_canvas.yview_scroll(move_amount, "units")
+            # --- TEXTBOX SCROLLING (Speed 1) ---
+            if not self.allow_main_scroll and hasattr(self, 'active_textbox'):
+                top, bottom = self.active_textbox.yview()
+                
+                # Check if the textbox has room to move
+                at_top = top <= 0.01
+                at_bottom = bottom >= 0.99
+                can_scroll_up = (event.delta > 0 and not at_top)
+                can_scroll_down = (event.delta < 0 and not at_bottom)
+                
+                if can_scroll_up or can_scroll_down:
+                    self.active_textbox.yview_scroll(move_units, "units")
+                    return # Locked in the textbox, don't execute main scroll
 
+            # --- MAIN WINDOW SCROLLING (Speed 3) ---
+            main_top, main_bottom = self.scroll_frame._parent_canvas.yview()
+            
+            # Stop if hitting the top or bottom of the main app
+            if event.delta > 0 and main_top <= 0:
+                self.scroll_accumulator = 0
+                return
+            if event.delta < 0 and main_bottom >= 1.0:
+                self.scroll_accumulator = 0
+                return
+
+            # Apply the faster speed (using 3 or whatever feels right)
+            self.scroll_frame._parent_canvas.yview_scroll(move_units * 20, "units")
+        
     # --- UI METHODS ---
 
     def toggle_section(self, section, button):
@@ -103,6 +135,8 @@ class IGApp(ctk.CTk):
         else:
             section.pack(fill="x", padx=10, after=button)
             button.configure(text=button.cget("text").replace("▶", "▼"))
+
+        self.update_scroll_region()
 
     def select_folder(self):
         data_dir = filedialog.askdirectory(title="Select Instagram Data Folder")
@@ -124,6 +158,8 @@ class IGApp(ctk.CTk):
             text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
         )
         self.filter_results()
+
+        self.update_scroll_region()
 
     def filter_results(self, *args):
         search_term = self.search_var.get().lower()
@@ -153,6 +189,13 @@ class IGApp(ctk.CTk):
         # This 'scan_dragto' is a built-in Tkinter method 
         # designed specifically for smooth 'flick' scrolling.
         self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def update_scroll_region(self):
+        """Force the scrollable frame to re-calculate its internal height."""
+        self.update_idletasks() # Let the UI finish rendering everything first
+        self.scroll_frame._parent_canvas.configure(
+            scrollregion=self.scroll_frame._parent_canvas.bbox("all")
+        )
 
 if __name__ == "__main__":
     app = IGApp()
