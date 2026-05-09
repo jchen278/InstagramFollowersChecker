@@ -8,9 +8,14 @@ class IGApp(ctk.CTk):
         self.title("IG Follower Stats")
         self.geometry("600x800")
 
+        self.allow_main_scroll = True
+
         # Main Scrollable Container
         self.scroll_frame = ctk.CTkScrollableFrame(self, width=550, height=750)
         self.scroll_frame.pack(pady=20, padx=20, fill="both", expand=True)
+        
+        # Universal bind for the mouse wheel
+        self.bind_all("<MouseWheel>", self._check_scroll_condition)
 
         self.label = ctk.CTkLabel(self.scroll_frame, text="Instagram Follower Stats", font=("Arial", 24, "bold"))
         self.label.pack(pady=10)
@@ -23,8 +28,7 @@ class IGApp(ctk.CTk):
         self.summary_label = ctk.CTkLabel(self.scroll_frame, text="Select a folder to begin", font=("Arial", 14))
         self.summary_label.pack(pady=10)
 
-        # Search Bar
-        # Create a horizontal frame for Search + Clear
+        # --- SEARCH BAR ---
         self.search_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
         self.search_frame.pack(pady=10)
 
@@ -32,16 +36,14 @@ class IGApp(ctk.CTk):
         self.search_var.trace_add("write", self.filter_results)
 
         self.search_entry = ctk.CTkEntry(self.search_frame, placeholder_text="Search names...", 
-                                        textvariable=self.search_var, width=350)
+                                         textvariable=self.search_var, width=350)
         self.search_entry.pack(side="left", padx=(0, 10))
 
-        # The Clear Button
         self.clear_btn = ctk.CTkButton(self.search_frame, text="X", width=30, 
-                                    fg_color="gray30", hover_color="red",
-                                    command=self.clear_search)
+                                       fg_color="gray30", hover_color="red",
+                                       command=self.clear_search)
         self.clear_btn.pack(side="left")
 
-        # Re-bind the Ctrl+F shortcut
         self.bind("<Control-f>", lambda event: self.search_entry.focus())
 
         # --- SECTIONS ---
@@ -51,27 +53,46 @@ class IGApp(ctk.CTk):
                                     command=lambda: self.toggle_section(self.nf_box, self.nf_btn))
         self.nf_btn.pack(fill="x", pady=(10, 0))
         self.nf_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        # Commented to start in hidden position
-        # self.nf_box.pack(fill="x", padx=10)
+        self._bind_scroll_lock(self.nf_box)
 
         # Fans
         self.fans_btn = ctk.CTkButton(self.scroll_frame, text="▶ Fans", 
                                       command=lambda: self.toggle_section(self.fans_box, self.fans_btn))
         self.fans_btn.pack(fill="x", pady=(10, 0))
         self.fans_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        # Commented to start in hidden position
-        # self.fans_box.pack(fill="x", padx=10)
+        self._bind_scroll_lock(self.fans_box)
 
         # Mutually Following
         self.mut_btn = ctk.CTkButton(self.scroll_frame, text="▶ Mutually Following", 
                                      command=lambda: self.toggle_section(self.mut_box, self.mut_btn))
         self.mut_btn.pack(fill="x", pady=(10, 0))
         self.mut_box = ctk.CTkTextbox(self.scroll_frame, height=200)
-        # Commented to start in hidden position
-        # self.mut_box.pack(fill="x", padx=10)
+        self._bind_scroll_lock(self.mut_box)
+
+    # --- SCROLL LOGIC ---
+
+    def _bind_scroll_lock(self, widget):
+        """Sets a flag to ignore main scroll when hovering over textboxes."""
+        widget.bind("<Enter>", lambda e: self._set_main_scroll(False))
+        widget.bind("<Leave>", lambda e: self._set_main_scroll(True))
+
+    def _set_main_scroll(self, status):
+        self.allow_main_scroll = status
+
+    def _check_scroll_condition(self, event):
+        """Only allows the main scroll frame to move if we aren't inside a textbox."""
+        if self.allow_main_scroll:
+            # Increase the multiplier (e.g., 3 or 5) to scroll faster
+            # Higher number = faster scroll
+            scroll_speed = 3 
+            
+            # Use units for precise line-by-line scrolling, but more of them
+            move_amount = int(-1 * (event.delta / 120) * scroll_speed)
+            self.scroll_frame._parent_canvas.yview_scroll(move_amount, "units")
+            
+    # --- UI METHODS ---
 
     def toggle_section(self, section, button):
-        """Hides or shows a section and updates the arrow."""
         if section.winfo_viewable():
             section.pack_forget()
             button.configure(text=button.cget("text").replace("▼", "▶"))
@@ -85,36 +106,26 @@ class IGApp(ctk.CTk):
             self.run_audit(data_dir)
 
     def update_box(self, box, user_list):
-        """Helper to clear and fill a specific textbox."""
         box.delete("0.0", "end")
         if not user_list:
-            box.insert("end", "No users found in this category.")
+            box.insert("end", "No users found.")
         else:
             for user in user_list:
-                box.insert("end", f" {user}\n")
+                box.insert("end", f"{user}\n")
 
     def run_audit(self, folder):
         data = analyze_relationships(folder)
-    
-        # Store the full data to filter later
         self.full_data = data 
-        
         self.summary_label.configure(
             text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
         )
-        
-        # Initial display
         self.filter_results()
-    
+
     def filter_results(self, *args):
-        """Filters the textboxes based on the search entry."""
         search_term = self.search_var.get().lower()
-        
-        # If audit hasn't ran yet, stop
         if not hasattr(self, 'full_data'):
             return
 
-        # Filter each category
         categories = {
             "not_following_back": self.nf_box,
             "fans": self.fans_box,
@@ -122,11 +133,13 @@ class IGApp(ctk.CTk):
         }
 
         for key, box in categories.items():
-            # List comprehension to find matches
             filtered_list = [user for user in self.full_data[key] if search_term in user.lower()]
             self.update_box(box, filtered_list)
-    
+
     def clear_search(self):
-        """Resets the search bar and refills the boxes with all data."""
-        self.search_var.set("") # This triggers filter_results automatically!
-        self.search_entry.focus() # Keeps the cursor in the box for a new search
+        self.search_var.set("")
+        self.search_entry.focus()
+
+if __name__ == "__main__":
+    app = IGApp()
+    app.mainloop()
