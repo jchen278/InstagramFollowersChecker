@@ -24,7 +24,7 @@ class IGApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("IG Follower Stats")
-        self.geometry("600x800")
+        self.geometry("600x600")
 
         self.allow_main_scroll = True
 
@@ -170,14 +170,22 @@ class IGApp(ctk.CTk):
                 box.insert("end", f"{user}\n")
 
     def run_audit(self, folder):
-        data = analyze_relationships(folder)
-        self.full_data = data 
-        self.summary_label.configure(
-            text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
-        )
-        self.filter_results()
+        try:
+            data = analyze_relationships(folder)
+            self.full_data = data 
+            self.summary_label.configure(
+                text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
+            )
+            self.filter_results()
 
-        self.update_scroll_region()
+            self.update_scroll_region()
+        
+        except Exception as e:
+            messagebox.showerror(
+                "Audit Error", 
+                f"An error occurred while processing the data:\n\n{str(e)}\n\n"
+                "Make sure you selected the correct folder."
+            )
 
     def filter_results(self, *args):
         search_term = self.search_var.get().lower()
