@@ -1,6 +1,24 @@
 import customtkinter as ctk
 from tkinter import filedialog
+from tkinter import messagebox
 from logic import analyze_relationships
+import os
+import sys
+from ctypes import windll
+
+# Check DPI
+try:
+    windll.shcore.SetProcessDpiAwareness(1)
+except Exception:
+    pass
+
+def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
 
 class IGApp(ctk.CTk):
     def __init__(self):
