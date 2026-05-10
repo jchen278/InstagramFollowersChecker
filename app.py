@@ -126,8 +126,3 @@ class IGApp(ctk.CTk):
 
     def update_scroll_region(self):
         self.scroll_manager.update_scroll_region()
-
-
-if __name__ == "__main__":
-    app = IGApp()
-    app.mainloop()
