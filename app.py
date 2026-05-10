@@ -151,7 +151,7 @@ class IGApp(ctk.CTk):
             section.pack_forget()
             button.configure(text=button.cget("text").replace("▼", "▶"))
         else:
-            section.pack(fill="x", padx=10, after=button)
+            section.pack(fill="x", padx=20, after=button)
             button.configure(text=button.cget("text").replace("▶", "▼"))
 
         self.update_scroll_region()
