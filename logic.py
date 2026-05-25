@@ -18,6 +18,9 @@ def analyze_relationships(data_dir):
         "mutuals": sorted(list(mutuals)),
         "counts": {
             "following": len(following),
-            "followers": len(followers)
+            "followers": len(followers),
+            "not_following_back": len(not_following_back),
+            "fans": len(fans),
+            "mutuals": len(mutuals)
         }
     }

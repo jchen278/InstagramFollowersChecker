@@ -94,10 +94,23 @@ class IGApp(ctk.CTk):
     def run_audit(self, folder):
         try:
             data = analyze_relationships(folder)
+            print("LOGIC DATA KEYS:", data.keys())          # <--- Add this temporarily
+            print("LOGIC COUNTS KEYS:", data['counts'].keys())
             self.full_data = data
             self.summary_label.configure(
                 text=f"Following: {data['counts']['following']} | Followers: {data['counts']['followers']}"
             )
+
+            self.result_sections["not_following_back"].button.configure(
+                text=f"▶ Not Following Back ({data['counts']['not_following_back']})"
+            )
+            self.result_sections["fans"].button.configure(
+                text=f"▶ Fans ({data['counts']['fans']})"
+            )
+            self.result_sections["mutuals"].button.configure(
+                text=f"▶ Mutually Following ({data['counts']['mutuals']})"
+            )
+
             self.filter_results()
             self.update_scroll_region()
         except Exception as e:
